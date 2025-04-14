@@ -16,7 +16,12 @@ dependencies {
 }
 
 application {
-    mainClass = "core.Main"
+    mainClass = "core.App"
+}
+tasks.run.configure {
+    standardInput = System.`in`
+    standardOutput = System.`out`
+
 }
 
 tasks.test {
