@@ -88,11 +88,31 @@ public class Console {
 
                         case "/convolution":
                             switch (command[1]) {
-
+                                case "blur": {
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.BLUR);
+                                }
+                                case "gaussian_blur": {
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.GBLUR);
+                                }
+                                case "motion_blur": {
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.MBLUR);
+                                }
+                                case "find_edges": {
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.FEDGES);
+                                }
+                                case "sharpen": {
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.SHARP);
+                                }
+                                case "emboss": {
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.EMBOSS);
+                                }
+                                case "id": {
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.ID);
+                                }
                             }
-                            return new Profiler(ProfilerType.PROCESS);
-                        //this.printStream.println("TO DO");
-                        //break;
+
+                            //this.printStream.println("TO DO");
+                            //break;
                         default:
                             incorrectCommand(Arrays.toString(command));
                             break;

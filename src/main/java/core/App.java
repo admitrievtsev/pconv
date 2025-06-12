@@ -3,6 +3,7 @@ package core;
 
 import core.console.Console;
 import core.console.Profiler;
+import core.convoulter.Convoluter;
 import org.bytedeco.opencv.opencv_core.*;
 import org.bytedeco.opencv.global.opencv_imgcodecs;
 
@@ -19,8 +20,6 @@ public class App {
         convoluter = new Convoluter();
         Profiler profiler;
         //debug to-remove
-        Mat img = opencv_imgcodecs.imread("src/main/resources/test.bmp", 0);
-        System.out.println(img);
 
         Scanner scanner = new Scanner(console.getInputStream());
 
@@ -34,6 +33,7 @@ public class App {
                     case EMPTY:
                         break;
                     case PROCESS:
+                        convoluter.convolution(profiler.getFilter());
                         break;
                     case NEW:
                         convoluter.setImage(profiler.getImage());

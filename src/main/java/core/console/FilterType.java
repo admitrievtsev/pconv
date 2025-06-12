@@ -1,5 +1,5 @@
 package core.console;
 
 public enum FilterType {
-    PROCESS, NEW, EMPTY, SAVE
+    BLUR, GBLUR, MBLUR, FEDGES, SHARP, EMBOSS, ID
 }

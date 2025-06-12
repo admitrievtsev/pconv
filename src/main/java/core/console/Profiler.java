@@ -36,13 +36,6 @@ public class Profiler {
         this.Filter = null;
     }
 
-    public Profiler() {
-        this.Type = null;
-        this.Image = null;
-        this.Path = null;
-        this.Filter = null;
-    }
-
     public Mat getImage() {
         return Image;
     }
