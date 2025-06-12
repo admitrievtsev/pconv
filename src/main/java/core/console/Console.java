@@ -1,9 +1,13 @@
 package core.console;
 
 import java.io.InputStream;
+
+import org.bytedeco.opencv.global.opencv_imgcodecs;
+import org.bytedeco.opencv.opencv_core.Mat;
+
 import java.io.PrintStream;
 import java.util.ArrayDeque;
-import java.util.List;
+import java.util.Arrays;
 
 public class Console {
     private InputStream inputStream;
@@ -35,25 +39,55 @@ public class Console {
     public void setPrintStream(PrintStream printStream) {
         this.printStream = printStream;
     }
+
     public static void addCommand(String message) {
         commands.addLast(message);
     }
+
+    private void incorrectCommand(String message) {
+        this.printStream.println("Incorrect command or flags " + message + ", try /help to see possible commands. ");
+    }
+
     public void processCommands() {
         while (!commands.isEmpty()) {
             String[] command = commands.pop().split(" ");
-            if (command.length >= 1) {
-                this.printStream.println("Command processing begins: " + command[0]);
-                switch (command[0]){
-                    case "help":
-                        this.printStream.println("TO DO");
-                        break;
-                    case "exit":
-                        System.exit(0);
-                        break;
-                    case "convolution":
-                        this.printStream.println("TO DO");
-                        break;
-                }
+            this.printStream.println("Command processing begins: " + command[0]);
+            switch (command.length) {
+                case 1:
+                    switch (command[0]) {
+                        case "/help":
+                            this.printStream.println("TO DO");
+                            break;
+                        case "/exit":
+                            System.exit(0);
+                            break;
+                        default:
+                            incorrectCommand(Arrays.toString(command));
+                            break;
+                    }
+                    break;
+                case 2:
+                    switch (command[0]) {
+                        case "/load":
+                            this.printStream.println("Loading file...");
+                            Mat img = opencv_imgcodecs.imread("src/main/resources/test.jpg");
+                            printStream.println(img);
+                            break;
+                        case "/convolution":
+                            switch (command[1]) {
+
+                            }
+                            this.printStream.println("TO DO");
+                            break;
+                        default:
+                            incorrectCommand(Arrays.toString(command));
+                            break;
+                    }
+                    break;
+                default:
+                    incorrectCommand(Arrays.toString(command));
+                    break;
+
             }
         }
     }

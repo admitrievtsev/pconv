@@ -2,27 +2,31 @@ package core;
 
 
 import core.console.Console;
+import org.bytedeco.opencv.opencv_core.*;
+import org.bytedeco.opencv.global.opencv_imgcodecs;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Scanner;
 
 public class App {
     public static Console console;
+
     public static void main(String[] args) {
         System.out.println("Image convolution\nCopyright 2025, Alexei Dmitrievtsev\nSPDX-License-Identifier WTFPL");
         console = new Console();
+
+        //debug to-remove
+        Mat img = opencv_imgcodecs.imread("src/main/resources/test.jpg");
+        System.out.println(img);
+
         Scanner scanner = new Scanner(console.getInputStream());
 
-        while (true){
+        while (true) {
             try {
                 System.out.print("> ");
                 String command = scanner.nextLine();
                 Console.addCommand(command);
                 console.processCommands();
-            }
-            catch (java.util.NoSuchElementException e){
+            } catch (java.util.NoSuchElementException e) {
                 System.out.println("No Such Element Found");
             }
         }
