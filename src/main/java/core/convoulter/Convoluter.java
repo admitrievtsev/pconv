@@ -46,9 +46,8 @@ public class Convoluter {
         int w = Image.arrayWidth();
         int h = Image.arrayHeight();
         Mat result = Image.clone();
+        //src/main/resources/test.bmp
         for (int x = 0; x < w; x++) {
-
-            System.out.println(x);
             for (int y = 0; y < h; y++) {
                 double color = 0.0;
                 for (int filterY = 0; filterY < filterHeight; filterY++)

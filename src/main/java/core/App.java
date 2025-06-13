@@ -19,7 +19,6 @@ public class App {
         console = new Console();
         convoluter = new Convoluter();
         Profiler profiler;
-        //debug to-remove
 
         Scanner scanner = new Scanner(console.getInputStream());
 
