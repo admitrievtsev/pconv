@@ -9,6 +9,9 @@ import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 
+import static core.console.ParallelType.COLS;
+import static core.console.ParallelType.ROWS;
+
 public class Console {
     private InputStream inputStream;
     private PrintStream printStream;
@@ -84,35 +87,64 @@ public class Console {
                         case "/save":
                             this.printStream.println("Saving file...");
                             return new Profiler(ProfilerType.SAVE, command[1]);
+                    }
 
+                case 4:
 
-                        case "/convolution":
+                    switch ((command[0])) {
+                        case "/convolution": {
+                            int ThreadsCount;
+                            ParallelType ParallelType = null;
+                            try {
+                                switch (Integer.parseInt(command[3])) {
+                                    case 2: {
+                                        ParallelType = ROWS;
+                                    }
+                                    case 3: {
+                                        ParallelType = COLS;
+                                    }
+                                    default: {
+                                        incorrectCommand(Arrays.toString(command));
+                                        break;
+                                    }
+                                }
+                            } catch (NumberFormatException e) {
+                                incorrectCommand(Arrays.toString(command));
+                                break;
+                            }
+                            try {
+                                ThreadsCount = Integer.parseInt(command[3]);
+                            } catch (NumberFormatException e) {
+                                incorrectCommand(Arrays.toString(command));
+                                break;
+                            }
                             switch (command[1]) {
                                 case "blur": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.BLUR);
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.BLUR, ParallelType, ThreadsCount);
                                 }
                                 case "gaussian_blur": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.GBLUR);
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.GBLUR, ParallelType, ThreadsCount);
                                 }
                                 case "motion_blur": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.MBLUR);
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.MBLUR, ParallelType, ThreadsCount);
                                 }
                                 case "find_edges": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.FEDGES);
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.FEDGES, ParallelType, ThreadsCount);
                                 }
                                 case "sharpen": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.SHARP);
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.SHARP, ParallelType, ThreadsCount);
                                 }
                                 case "emboss": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.EMBOSS);
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.EMBOSS, ParallelType, ThreadsCount);
                                 }
                                 case "id": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.ID);
+                                    return new Profiler(ProfilerType.PROCESS, FilterType.ID, ParallelType, ThreadsCount);
                                 }
                             }
+                        }
 
-                            //this.printStream.println("TO DO");
-                            //break;
+                        //this.printStream.println("TO DO");
+                        //break;
                         default:
                             incorrectCommand(Arrays.toString(command));
                             break;

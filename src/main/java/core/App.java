@@ -32,8 +32,8 @@ public class App {
                     case EMPTY:
                         break;
                     case PROCESS:
-                        convoluter.convolution(profiler.getFilter());
-                        break;
+                        convoluter.convolution(profiler.getFilter(), profiler.getParallelType(), profiler.getThreadsCount());
+
                     case NEW:
                         convoluter.setImage(profiler.getImage());
                         break;
