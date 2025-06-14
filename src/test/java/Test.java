@@ -4,20 +4,16 @@ import core.console.ParallelType;
 import core.convoulter.Convoluter;
 import org.bytedeco.opencv.global.opencv_imgcodecs;
 import org.testng.*;
-import org.testng.annotations.Parameters;
-import org.testng.annotations.Test;
 import org.bytedeco.opencv.opencv_core.Mat;
-
-import java.util.Arrays;
 
 import static core.console.FilterType.*;
 import static core.console.ParallelType.*;
 
-public class SimpleTest {
+public class Test {
     private final ParallelType[] PTypes = {null, ROWS, COLS, PIXEL, FRGM};
     private final FilterType[] FTypes = {BLUR, GBLUR, MBLUR, FEDGES, SHARP, EMBOSS, ID, SL, SR};
 
-    @Test
+    @org.testng.annotations.Test
     public void testSimpleGradientId() throws Exception {
         Convoluter Conv = new Convoluter();
         Conv.setImage(opencv_imgcodecs.imread("src/test/resources/test_gradient.bmp", 0));
@@ -32,7 +28,7 @@ public class SimpleTest {
         }
     }
 
-    @Test
+    @org.testng.annotations.Test
     public void testSimpleGradientChanges() throws Exception {
         Convoluter Conv = new Convoluter();
         Conv.setImage(opencv_imgcodecs.imread("src/test/resources/test_gradient.bmp", 0));
@@ -52,7 +48,7 @@ public class SimpleTest {
         Assert.assertTrue(dif);
     }
 
-    @Test
+    @org.testng.annotations.Test
     public void testSimplePutinChanges() throws Exception {
         Convoluter Conv = new Convoluter();
         Conv.setImage(opencv_imgcodecs.imread("src/test/resources/putin_sharped.bmp", 0));
@@ -72,7 +68,7 @@ public class SimpleTest {
         Assert.assertTrue(dif);
     }
 
-    @Test
+    @org.testng.annotations.Test
     public void testSimplePutinSharpedId() throws Exception {
         Convoluter Conv = new Convoluter();
         Conv.setImage(opencv_imgcodecs.imread("src/test/resources/putin_sharped.bmp", 0));
@@ -87,7 +83,7 @@ public class SimpleTest {
         }
     }
 
-    @Test
+    @org.testng.annotations.Test
     public void testPutinShiftId() throws Exception {
         Convoluter Conv = new Convoluter();
         Conv.setImage(opencv_imgcodecs.imread("src/test/resources/putin_sharped.bmp", 0));
@@ -103,7 +99,7 @@ public class SimpleTest {
         }
     }
 
-    @Test
+    @org.testng.annotations.Test
     public void testPutinShiftPixelId() throws Exception {
         Convoluter Conv = new Convoluter();
         Conv.setImage(opencv_imgcodecs.imread("src/test/resources/putin_sharped.bmp", 0));
@@ -136,7 +132,7 @@ public class SimpleTest {
         }
     }
 
-    @Test
+    @org.testng.annotations.Test
     public void testPutinParallelSeqEq() throws Exception {
         for (ParallelType pType : PTypes)
             for (FilterType fType : FTypes)

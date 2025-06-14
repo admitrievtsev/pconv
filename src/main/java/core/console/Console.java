@@ -60,7 +60,27 @@ public class Console {
                 case 1:
                     switch (command[0]) {
                         case "/help":
-                            this.printStream.println("TO DO");
+                            this.printStream.println("Help list. Commands:\n" +
+                                    "/exit - to exit program\n" +
+                                    "/load [path] - to load image. Path cannot be null.\n" +
+                                    "/save [path] - to save image. Path cannot be null.\n" +
+                                    "/help - to call list of possible commands" +
+                                    "/convolution [filter type] [parallel type] [amount of threads] - to make image convolution." +
+                                    "   [filter type] - type of filter applying to image. Possible variants:\n" +
+                                    "       - blur\n" +
+                                    "       - gaussian_blur\n" +
+                                    "       - motion_blur\n" +
+                                    "       - find_edges\n" +
+                                    "       - sharpen\n" +
+                                    "       - emboss\n" +
+                                    "       - id\n" +
+                                    "   [parallel type] - type of parallel convolution execution, Possible variants:\n" +
+                                    "       - 1(sequential)\n" +
+                                    "       - 2(pixel)\n" +
+                                    "       - 3(rows)\n" +
+                                    "       - 4(cols)\n" +
+                                    "   [amount of thread] - amount of threads. Any integer umber >1. Note: if you want to use 1(sequential) type of parallelism, make this option equal to any integer number" +
+                                    "WARNING: YOU CANNOT MAKE CONVOLUTION WITHOUT LOADING IMAGE BEFORE IT");
                             break;
                         case "/exit":
                             System.exit(0);
@@ -111,6 +131,7 @@ public class Console {
                                 incorrectCommand(Arrays.toString(command));
                                 break;
                             }
+                            //У меня тут сломался свитч-кейс в джаве, поэтому так
                             if (arg == 2) {
                                 ParallelType = PIXEL;
                             } else if (arg == 3) {
