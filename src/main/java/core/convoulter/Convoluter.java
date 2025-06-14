@@ -72,7 +72,7 @@ public class Convoluter {
                 MakeRowsConvolution(filterHeight, filterWidth, filter, bias, factor, w, h, threadsCount);
                 break;
             case COLS:
-                MakeSimpleConvolution(filterHeight, filterWidth, filter, bias, factor, w, h);
+                MakeColsConvolution(filterHeight, filterWidth, filter, bias, factor, w, h, threadsCount);
                 break;
             case PIXEL:
                 MakePixelConvolution(filterHeight, filterWidth, filter, bias, factor, w, h, threadsCount);
@@ -81,21 +81,6 @@ public class Convoluter {
                 MakeSimpleConvolution(filterHeight, filterWidth, filter, bias, factor, w, h);
                 break;
         }
-    }
-
-    private void MakeSimpleConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h) throws Exception {
-
-        Mat result = Image.clone();
-        // src/main/resources/test.bmp
-        // /convolution blur 16 2
-        long time_st = System.currentTimeMillis();
-        for (int x = 0; x < w; x++) {
-            for (int y = 0; y < h; y++) {
-                convoult(result.ptr(y, x), y, x, w, h, factor, bias, filterHeight, filterWidth, filter);
-            }
-        }
-        System.out.println(System.currentTimeMillis() - time_st);
-        setImage(result);
     }
 
     private void convoult(BytePointer result, int y, int x, int w, int h, double factor, double bias, int filterHeight, int filterWidth, int[][] filter) {
@@ -120,6 +105,22 @@ public class Convoluter {
         result.put((byte) (res_byte));
         return;
     }
+
+    private void MakeSimpleConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h) throws Exception {
+
+        Mat result = Image.clone();
+        // src/main/resources/test.bmp
+        // /convolution blur 16 2
+        long time_st = System.currentTimeMillis();
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) {
+                convoult(result.ptr(y, x), y, x, w, h, factor, bias, filterHeight, filterWidth, filter);
+            }
+        }
+        System.out.println(System.currentTimeMillis() - time_st);
+        setImage(result);
+    }
+
 
     private void MakePixelConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
         ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
@@ -163,4 +164,25 @@ public class Convoluter {
         setImage(result);
     }
 
+    private void MakeColsConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
+        ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
+        Mat result = Image.clone();
+
+        // /load src/main/resources/test_1.bmp
+        // /convolution blur 4 16
+        long time_st = System.currentTimeMillis();
+        for (int x = 0; x < w; x++) {
+            int finalX = x;
+            threadPool.execute(() -> {
+                for (int y = 0; y < h; y++) {
+                    convoult(result.ptr(y, finalX), y, finalX, w, h, factor, bias, filterHeight, filterWidth, filter);
+                }
+            });
+
+
+        }
+        threadPool.close();
+        System.out.println(System.currentTimeMillis() - time_st);
+        setImage(result);
+    }
 }
