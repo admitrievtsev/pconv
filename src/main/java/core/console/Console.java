@@ -15,7 +15,7 @@ public class Console {
     private InputStream inputStream;
     private PrintStream printStream;
 
-    private static ArrayDeque<String> commands = new ArrayDeque<String>();
+    private static final ArrayDeque<String> commands = new ArrayDeque<String>();
 
     public Console() {
         this.inputStream = System.in;
@@ -123,7 +123,6 @@ public class Console {
                                 incorrectCommand(Arrays.toString(command));
                                 break;
                             }
-                            printStream.println("PROCESS FILTER TYPE");
                             switch (command[1]) {
                                 case "blur": {
                                     return new Profiler(ProfilerType.PROCESS, FilterType.BLUR, ParallelType, ThreadsCount);
@@ -149,8 +148,6 @@ public class Console {
                             }
                         }
 
-                        //this.printStream.println("TO DO");
-                        //break;
                         default:
                             incorrectCommand(Arrays.toString(command));
                             break;
