@@ -16,8 +16,8 @@ dependencies {
 }
 
 application {
-    mainClass = "core.Benchmark"
-    //mainClass = "core.App"
+    //mainClass = "core.Benchmark" //to use for benching
+    mainClass = "core.App"
 }
 tasks.run.configure {
     standardInput = System.`in`
