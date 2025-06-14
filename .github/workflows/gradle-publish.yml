@@ -2,8 +2,8 @@
 name: Gradle Package
 
 on:
-  release:
-    types: [created]
+  push:
+  pull_request:
 
 jobs:
   build:
@@ -30,8 +30,3 @@ jobs:
       run: ./gradlew build
     - name: Test with Gradle
       run: ./gradlew test
-    - name: Publish to GitHub Packages
-      run: ./gradlew publish
-      env:
-        USERNAME: ${{ github.actor }}
-        TOKEN: ${{ secrets.GITHUB_TOKEN }}
