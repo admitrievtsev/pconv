@@ -45,6 +45,18 @@ public class Filters {
             {-1, -1, -1}
     }, 3, 3, 1.0, 0.0);
 
+    public final Filter ShiftLeft = new Filter(new int[][]{
+            {0, 0, 0},
+            {1, 0, 0},
+            {0, 0, 0}
+    }, 3, 3, 1.0, 0.0);
+
+    public final Filter ShiftRight = new Filter(new int[][]{
+            {0, 0, 0},
+            {0, 0, 1},
+            {0, 0, 0}
+    }, 3, 3, 1.0, 0.0);
+
     public final Filter EmbossFilter = new Filter(new int[][]{
             {-1, -1, -1, -1, 0},
             {-1, -1, -1, 0, 1},

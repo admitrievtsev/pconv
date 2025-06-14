@@ -2,7 +2,12 @@ package core.convoulter;
 
 import core.console.FilterType;
 import core.console.ParallelType;
+import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.opencv.opencv_core.Mat;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
 
 import static java.lang.Math.*;
 
@@ -18,7 +23,7 @@ public class Convoluter {
         return this.Image;
     }
 
-    public void convolution(FilterType FilterType, ParallelType parallelType, int threadsCount) {
+    public void convolution(FilterType FilterType, ParallelType parallelType, int threadsCount) throws Exception {
         Filter Filter;
         switch (FilterType) {
             case BLUR -> {
@@ -42,91 +47,120 @@ public class Convoluter {
             case ID -> {
                 Filter = Filters.Id;
             }
+            case SL -> {
+                Filter = Filters.ShiftLeft;
+            }
+            case SR -> {
+                Filter = Filters.ShiftRight;
+            }
             case null -> {
                 return;
             }
         }
+        int filterHeight = Filter.getHeight();
+        int filterWidth = Filter.getWidth();
+        int[][] filter = Filter.getFilter();
+        double bias = Filter.getBias();
+        double factor = Filter.getFactor();
+        int w = Image.arrayWidth();
+        int h = Image.arrayHeight();
         switch (parallelType) {
             case null:
-                MakeSimpleConvolution(Filter);
-            case COLS:
-                MakeSimpleConvolution(Filter);
+                MakeSimpleConvolution(filterHeight, filterWidth, filter, bias, factor, w, h);
+                break;
             case ROWS:
-                MakeRowsConvolution(Filter, threadsCount);
+                MakeRowsConvolution(filterHeight, filterWidth, filter, bias, factor, w, h, threadsCount);
+                break;
+            case COLS:
+                MakeSimpleConvolution(filterHeight, filterWidth, filter, bias, factor, w, h);
+                break;
+            case PIXEL:
+                MakePixelConvolution(filterHeight, filterWidth, filter, bias, factor, w, h, threadsCount);
+                break;
             default:
-                MakeSimpleConvolution(Filter);
+                MakeSimpleConvolution(filterHeight, filterWidth, filter, bias, factor, w, h);
+                break;
         }
     }
 
-    private void MakeSimpleConvolution(Filter Filter) {
-        int filterHeight = Filter.getHeight();
-        int filterWidth = Filter.getWidth();
-        int[][] filter = Filter.getFilter();
-        double bias = Filter.getBias();
-        double factor = Filter.getFactor();
-        int w = Image.arrayWidth();
-        int h = Image.arrayHeight();
+    private void MakeSimpleConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h) throws Exception {
+
         Mat result = Image.clone();
-        //src/main/resources/test.bmp
-        // /convolution blur parallel 16 2
+        // src/main/resources/test.bmp
+        // /convolution blur 16 2
+        long time_st = System.currentTimeMillis();
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
-                double color = 0.0;
-                for (int filterY = 0; filterY < filterHeight; filterY++)
-                    for (int filterX = 0; filterX < filterWidth; filterX++) {
-                        int imageX = (x - filterWidth / 2 + filterX + w) % w;
-                        int imageY = (y - filterHeight / 2 + filterY + h) % h;
-                        int t = (Image.ptr(imageY, imageX).get());
-
-                        if (t < 0) {
-                            t = t + 256;
-                        }
-                        color += (t) * filter[filterX][filterY];
-                    }
-
-                int res_byte = (int) max(min((factor * color + bias), 255), 0);
-                if (res_byte > 127) {
-                    res_byte = res_byte - 256;
-                }
-                result.ptr(y, x).put((byte) (res_byte));
+                convoult(result.ptr(y, x), y, x, w, h, factor, bias, filterHeight, filterWidth, filter);
             }
         }
-        Image = result;
+        System.out.println(System.currentTimeMillis() - time_st);
+        setImage(result);
     }
 
-    private void MakeRowsConvolution(Filter Filter, int ThreadsCount) {
-        int filterHeight = Filter.getHeight();
-        int filterWidth = Filter.getWidth();
-        int[][] filter = Filter.getFilter();
-        double bias = Filter.getBias();
-        double factor = Filter.getFactor();
-        int w = Image.arrayWidth();
-        int h = Image.arrayHeight();
+    private void convoult(BytePointer result, int y, int x, int w, int h, double factor, double bias, int filterHeight, int filterWidth, int[][] filter) {
+        double color = 0.0;
+        for (int filterY = 0; filterY < filterHeight; filterY++)
+            for (int filterX = 0; filterX < filterWidth; filterX++) {
+                int imageX = (x - filterWidth / 2 + filterX + w) % w;
+                int imageY = (y - filterHeight / 2 + filterY + h) % h;
+                int t = (Image.ptr(imageY, imageX).get());
+
+                if (t < 0) {
+                    t = t + 256;
+                }
+                color += (t) * filter[filterX][filterY];
+            }
+
+        int res_byte = (int) max(min((factor * color + bias), 255), 0);
+        if (res_byte > 127) {
+            res_byte = res_byte - 256;
+        }
+        ;
+        result.put((byte) (res_byte));
+        return;
+    }
+
+    private void MakePixelConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
+        ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
         Mat result = Image.clone();
-        //src/main/resources/test.bmp
-        // /convolution blur parallel 16 2
+
+        // /load src/main/resources/test.bmp
+        // /convolution blur 2 16
+        long time_st = System.currentTimeMillis();
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
-                double color = 0.0;
-                for (int filterY = 0; filterY < filterHeight; filterY++)
-                    for (int filterX = 0; filterX < filterWidth; filterX++) {
-                        int imageX = (x - filterWidth / 2 + filterX + w) % w;
-                        int imageY = (y - filterHeight / 2 + filterY + h) % h;
-                        int t = (Image.ptr(imageY, imageX).get());
+                int finalY = y;
+                int finalX = x;
+                threadPool.execute(() -> convoult(result.ptr(finalY, finalX), finalY, finalX, w, h, factor, bias, filterHeight, filterWidth, filter));
 
-                        if (t < 0) {
-                            t = t + 256;
-                        }
-                        color += (t) * filter[filterX][filterY];
-                    }
-
-                int res_byte = (int) max(min((factor * color + bias), 255), 0);
-                if (res_byte > 127) {
-                    res_byte = res_byte - 256;
-                }
-                result.ptr(y, x).put((byte) (res_byte));
             }
         }
-        Image = result;
+        threadPool.close();
+        System.out.println(System.currentTimeMillis() - time_st);
+        setImage(result);
     }
+
+    private void MakeRowsConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
+        ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
+        Mat result = Image.clone();
+
+        // /load src/main/resources/test.bmp
+        // /convolution blur 3 16
+        long time_st = System.currentTimeMillis();
+        for (int y = 0; y < h; y++) {
+            int finalY = y;
+            threadPool.execute(() -> {
+                for (int x = 0; x < h; x++) {
+                    convoult(result.ptr(finalY, x), finalY, x, w, h, factor, bias, filterHeight, filterWidth, filter);
+                }
+            });
+
+
+        }
+        threadPool.close();
+        System.out.println(System.currentTimeMillis() - time_st);
+        setImage(result);
+    }
+
 }

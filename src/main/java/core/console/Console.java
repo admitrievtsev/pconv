@@ -9,8 +9,7 @@ import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 
-import static core.console.ParallelType.COLS;
-import static core.console.ParallelType.ROWS;
+import static core.console.ParallelType.*;
 
 public class Console {
     private InputStream inputStream;
@@ -95,29 +94,34 @@ public class Console {
                         case "/convolution": {
                             int ThreadsCount;
                             ParallelType ParallelType = null;
+                            int arg;
                             try {
-                                switch (Integer.parseInt(command[3])) {
-                                    case 2: {
-                                        ParallelType = ROWS;
-                                    }
-                                    case 3: {
-                                        ParallelType = COLS;
-                                    }
-                                    default: {
-                                        incorrectCommand(Arrays.toString(command));
-                                        break;
-                                    }
-                                }
+                                arg = Integer.parseInt(command[2]);
+                                printStream.println("ARGUMENT 2 IS " + arg);
+
                             } catch (NumberFormatException e) {
+                                printStream.println("Argument " + command[2] + " parse failed");
                                 incorrectCommand(Arrays.toString(command));
                                 break;
                             }
                             try {
                                 ThreadsCount = Integer.parseInt(command[3]);
                             } catch (NumberFormatException e) {
+                                printStream.println("Argument " + command[3] + " parse failed");
                                 incorrectCommand(Arrays.toString(command));
                                 break;
                             }
+                            if (arg == 2) {
+                                ParallelType = PIXEL;
+                            } else if (arg == 3) {
+                                ParallelType = ROWS;
+                            } else if (arg == 4) {
+                                ParallelType = COLS;
+                            } else {
+                                incorrectCommand(Arrays.toString(command));
+                                break;
+                            }
+                            printStream.println("PROCESS FILTER TYPE");
                             switch (command[1]) {
                                 case "blur": {
                                     return new Profiler(ProfilerType.PROCESS, FilterType.BLUR, ParallelType, ThreadsCount);

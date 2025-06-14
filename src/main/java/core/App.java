@@ -33,11 +33,14 @@ public class App {
                         break;
                     case PROCESS:
                         convoluter.convolution(profiler.getFilter(), profiler.getParallelType(), profiler.getThreadsCount());
-
+                        break;
                     case NEW:
+
+                        System.out.println("SWITCH FROM APP");
                         convoluter.setImage(profiler.getImage());
                         break;
                     case SAVE:
+                        System.out.println("TO SAVE IS " + convoluter.getImage());
                         if (!opencv_imgcodecs.imwrite(profiler.getPath(), convoluter.getImage())) {
                             System.out.println("Failed to save file");
                         } else {
@@ -47,6 +50,8 @@ public class App {
                 }
             } catch (java.util.NoSuchElementException e) {
                 System.out.println("No Such Element Found");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }
 
