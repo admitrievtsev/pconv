@@ -5,8 +5,6 @@ import core.console.ParallelType;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.opencv.opencv_core.Mat;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.*;
 
 import static java.lang.Math.*;
@@ -68,6 +66,9 @@ public class Convoluter {
             case null:
                 MakeSimpleConvolution(filterHeight, filterWidth, filter, bias, factor, w, h);
                 break;
+            case FRGM:
+                MakeFragmentConvolution(filterHeight, filterWidth, filter, bias, factor, w, h, threadsCount);
+                break;
             case ROWS:
                 MakeRowsConvolution(filterHeight, filterWidth, filter, bias, factor, w, h, threadsCount);
                 break;
@@ -76,9 +77,6 @@ public class Convoluter {
                 break;
             case PIXEL:
                 MakePixelConvolution(filterHeight, filterWidth, filter, bias, factor, w, h, threadsCount);
-                break;
-            default:
-                MakeSimpleConvolution(filterHeight, filterWidth, filter, bias, factor, w, h);
                 break;
         }
     }
@@ -103,21 +101,20 @@ public class Convoluter {
         }
         ;
         result.put((byte) (res_byte));
-        return;
     }
 
     private void MakeSimpleConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h) throws Exception {
 
         Mat result = Image.clone();
+
         // src/main/resources/test.bmp
         // /convolution blur 16 2
-        long time_st = System.currentTimeMillis();
+
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 convoult(result.ptr(y, x), y, x, w, h, factor, bias, filterHeight, filterWidth, filter);
             }
         }
-        System.out.println(System.currentTimeMillis() - time_st);
         setImage(result);
     }
 
@@ -128,17 +125,15 @@ public class Convoluter {
 
         // /load src/main/resources/test.bmp
         // /convolution blur 2 16
-        long time_st = System.currentTimeMillis();
+
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 int finalY = y;
                 int finalX = x;
                 threadPool.execute(() -> convoult(result.ptr(finalY, finalX), finalY, finalX, w, h, factor, bias, filterHeight, filterWidth, filter));
-
             }
         }
         threadPool.close();
-        System.out.println(System.currentTimeMillis() - time_st);
         setImage(result);
     }
 
@@ -148,7 +143,7 @@ public class Convoluter {
 
         // /load src/main/resources/test.bmp
         // /convolution blur 3 16
-        long time_st = System.currentTimeMillis();
+
         for (int y = 0; y < h; y++) {
             int finalY = y;
             threadPool.execute(() -> {
@@ -156,11 +151,8 @@ public class Convoluter {
                     convoult(result.ptr(finalY, x), finalY, x, w, h, factor, bias, filterHeight, filterWidth, filter);
                 }
             });
-
-
         }
         threadPool.close();
-        System.out.println(System.currentTimeMillis() - time_st);
         setImage(result);
     }
 
@@ -170,7 +162,7 @@ public class Convoluter {
 
         // /load src/main/resources/test_1.bmp
         // /convolution blur 4 16
-        long time_st = System.currentTimeMillis();
+
         for (int x = 0; x < w; x++) {
             int finalX = x;
             threadPool.execute(() -> {
@@ -178,11 +170,32 @@ public class Convoluter {
                     convoult(result.ptr(y, finalX), y, finalX, w, h, factor, bias, filterHeight, filterWidth, filter);
                 }
             });
-
-
         }
         threadPool.close();
-        System.out.println(System.currentTimeMillis() - time_st);
+        setImage(result);
+    }
+
+    private void MakeFragmentConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
+        ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
+        Mat result = Image.clone();
+
+        // /load src/main/resources/test_1.bmp
+        // /convolution blur 5 16
+
+        for (int x = 0; x * ThreadsCount < w; x++) {
+            for (int y = 0; y * ThreadsCount < h; y++) {
+                int finalX = x;
+                int finalY = y;
+                threadPool.execute(() -> {
+                    for (int y_t = finalY * ThreadsCount; y_t < min(h, (finalY + 1) * ThreadsCount); y_t++) {
+                        for (int x_t = finalX * ThreadsCount; x_t < min(w, (finalX + 1) * ThreadsCount); x_t++) {
+                            convoult(result.ptr(y_t, x_t), y_t, x_t, w, h, factor, bias, filterHeight, filterWidth, filter);
+                        }
+                    }
+                });
+            }
+        }
+        threadPool.close();
         setImage(result);
     }
 }

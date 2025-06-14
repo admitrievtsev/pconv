@@ -117,6 +117,8 @@ public class Console {
                                 ParallelType = ROWS;
                             } else if (arg == 4) {
                                 ParallelType = COLS;
+                            } else if (arg == 5) {
+                                ParallelType = FRGM;
                             } else {
                                 incorrectCommand(Arrays.toString(command));
                                 break;

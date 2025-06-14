@@ -14,7 +14,7 @@ import static core.console.FilterType.*;
 import static core.console.ParallelType.*;
 
 public class SimpleTest {
-    private final ParallelType[] PTypes = {null, ROWS, COLS, PIXEL};
+    private final ParallelType[] PTypes = {null, ROWS, COLS, PIXEL, FRGM};
     private final FilterType[] FTypes = {BLUR, GBLUR, MBLUR, FEDGES, SHARP, EMBOSS, ID, SL, SR};
 
     @Test
@@ -38,6 +38,26 @@ public class SimpleTest {
         Conv.setImage(opencv_imgcodecs.imread("src/test/resources/test_gradient.bmp", 0));
         Conv.convolution(BLUR, null, 1);
         Mat actual = opencv_imgcodecs.imread("src/test/resources/test_gradient.bmp", 0);
+        Assert.assertEquals(Conv.getImage().arrayHeight(), actual.arrayHeight());
+        Assert.assertEquals(Conv.getImage().arrayWidth(), actual.arrayWidth());
+        boolean dif = false;
+        for (int x = 0; x < actual.arrayHeight(); x++) {
+            for (int y = 0; y < actual.arrayWidth(); y++) {
+                if ((Conv.getImage().ptr(x, y).get() != actual.ptr(x, y).get())) {
+                    dif = true;
+                }
+                ;
+            }
+        }
+        Assert.assertTrue(dif);
+    }
+
+    @Test
+    public void testSimplePutinChanges() throws Exception {
+        Convoluter Conv = new Convoluter();
+        Conv.setImage(opencv_imgcodecs.imread("src/test/resources/putin_sharped.bmp", 0));
+        Conv.convolution(BLUR, null, 1);
+        Mat actual = opencv_imgcodecs.imread("src/test/resources/putin_sharped.bmp", 0);
         Assert.assertEquals(Conv.getImage().arrayHeight(), actual.arrayHeight());
         Assert.assertEquals(Conv.getImage().arrayWidth(), actual.arrayWidth());
         boolean dif = false;

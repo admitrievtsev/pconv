@@ -32,19 +32,20 @@ public class App {
                     case EMPTY:
                         break;
                     case PROCESS:
-                        convoluter.convolution(profiler.getFilter(), profiler.getParallelType(), profiler.getThreadsCount());
+                        if (convoluter.getImage() != null && !(profiler.getType() != null & profiler.getThreadsCount() < 1)) {
+                            convoluter.convolution(profiler.getFilter(), profiler.getParallelType(), profiler.getThreadsCount());
+                        }
                         break;
                     case NEW:
-
-                        System.out.println("SWITCH FROM APP");
                         convoluter.setImage(profiler.getImage());
                         break;
                     case SAVE:
-                        System.out.println("TO SAVE IS " + convoluter.getImage());
-                        if (!opencv_imgcodecs.imwrite(profiler.getPath(), convoluter.getImage())) {
-                            System.out.println("Failed to save file");
-                        } else {
-                            System.out.println("File successfully saved");
+                        if (convoluter.getImage() != null) {
+                            if (!opencv_imgcodecs.imwrite(profiler.getPath(), convoluter.getImage())) {
+                                System.out.println("Failed to save file");
+                            } else {
+                                System.out.println("File successfully saved");
+                            }
                         }
                         break;
                 }
