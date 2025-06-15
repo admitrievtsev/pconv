@@ -8,6 +8,7 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Objects;
 
 import static core.console.ParallelType.*;
 
@@ -65,6 +66,8 @@ public class Console {
                                     "/load [path] - to load image. Path cannot be null.\n" +
                                     "/save [path] - to save image. Path cannot be null.\n" +
                                     "/help - to call list of possible commands" +
+                                    "/stream [filter type] [path1] [path2] ... - on-line processing of array of images" +
+                                    "   [filter type] - type of filter applying to image. Possible variants:\n" +
                                     "/convolution [filter type] [parallel type] [amount of threads] - to make image convolution." +
                                     "   [filter type] - type of filter applying to image. Possible variants:\n" +
                                     "       - blur\n" +
@@ -105,14 +108,13 @@ public class Console {
                             break;
                         case "/save":
                             this.printStream.println("Saving file...");
-                            return new Profiler(ProfilerType.SAVE, command[1]);
+                            return new Profiler(ProfilerType.SAVE, new String[]{command[1]});
                     }
 
                 case 4:
-
                     switch ((command[0])) {
                         case "/convolution": {
-                            int ThreadsCount;
+                            int threadsCount;
                             ParallelType ParallelType = null;
                             int arg;
                             try {
@@ -125,7 +127,7 @@ public class Console {
                                 break;
                             }
                             try {
-                                ThreadsCount = Integer.parseInt(command[3]);
+                                threadsCount = Integer.parseInt(command[3]);
                             } catch (NumberFormatException e) {
                                 printStream.println("Argument " + command[3] + " parse failed");
                                 incorrectCommand(Arrays.toString(command));
@@ -144,37 +146,22 @@ public class Console {
                                 incorrectCommand(Arrays.toString(command));
                                 break;
                             }
-                            switch (command[1]) {
-                                case "blur": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.BLUR, ParallelType, ThreadsCount);
-                                }
-                                case "gaussian_blur": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.GBLUR, ParallelType, ThreadsCount);
-                                }
-                                case "motion_blur": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.MBLUR, ParallelType, ThreadsCount);
-                                }
-                                case "find_edges": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.FEDGES, ParallelType, ThreadsCount);
-                                }
-                                case "sharpen": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.SHARP, ParallelType, ThreadsCount);
-                                }
-                                case "emboss": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.EMBOSS, ParallelType, ThreadsCount);
-                                }
-                                case "id": {
-                                    return new Profiler(ProfilerType.PROCESS, FilterType.ID, ParallelType, ThreadsCount);
-                                }
-                            }
+                            return new Profiler(ProfilerType.PROCESS, decideFilter(command[1]), ParallelType, threadsCount);
                         }
-
+                        case "/stream":
+                            continue;
                         default:
                             incorrectCommand(Arrays.toString(command));
                             break;
                     }
-                    break;
+
                 default:
+                    if (command.length > 2 && Objects.equals(command[0], "/stream")) {
+                        FilterType filter = decideFilter(command[1]);
+                        if (filter != null) {
+                            return new Profiler(ProfilerType.STREAM, filter, ROWS, ((int) (16) / (command.length - 2)) + 1);
+                        }
+                    }
                     incorrectCommand(Arrays.toString(command));
                     break;
 
@@ -183,4 +170,31 @@ public class Console {
         return new Profiler(ProfilerType.EMPTY);
     }
 
+    private FilterType decideFilter(String fType) {
+        switch (fType) {
+            case "blur": {
+                return FilterType.BLUR;
+            }
+            case "gaussian_blur": {
+                return FilterType.GBLUR;
+            }
+            case "motion_blur": {
+                return FilterType.MBLUR;
+            }
+            case "find_edges": {
+                return FilterType.FEDGES;
+            }
+            case "sharpen": {
+                return FilterType.SHARP;
+            }
+            case "emboss": {
+                return FilterType.EMBOSS;
+            }
+            case "id": {
+                return FilterType.ID;
+            }
+            default:
+                return null;
+        }
+    }
 }

@@ -5,15 +5,15 @@ import org.bytedeco.opencv.opencv_core.Mat;
 public class Profiler {
     private final ProfilerType Type;
     private final Mat Image;
-    private final String Path;
+    private final String[] Paths;
     private final FilterType Filter;
     private final int ThreadsCount;
     private final ParallelType ParallelType;
 
-    public Profiler(ProfilerType Type, String Path) {
+    public Profiler(ProfilerType Type, String[] Paths) {
         this.Type = Type;
         this.Image = null;
-        this.Path = Path;
+        this.Paths = Paths;
         this.Filter = null;
         this.ParallelType = null;
         this.ThreadsCount = 1;
@@ -22,7 +22,7 @@ public class Profiler {
     public Profiler(ProfilerType Type, FilterType Filter, ParallelType PType, int ThreadsCount) {
         this.Type = Type;
         this.Image = null;
-        this.Path = null;
+        this.Paths = null;
         this.Filter = Filter;
         this.ParallelType = PType;
         this.ThreadsCount = ThreadsCount;
@@ -31,7 +31,7 @@ public class Profiler {
     public Profiler(ProfilerType Type, Mat Image) {
         this.Type = Type;
         this.Image = Image;
-        this.Path = null;
+        this.Paths = null;
         this.Filter = null;
         this.ParallelType = null;
         this.ThreadsCount = 1;
@@ -40,7 +40,7 @@ public class Profiler {
     public Profiler(ProfilerType Type) {
         this.Type = Type;
         this.Image = null;
-        this.Path = null;
+        this.Paths = null;
         this.Filter = null;
         this.ParallelType = null;
         this.ThreadsCount = 1;
@@ -54,8 +54,8 @@ public class Profiler {
         return Type;
     }
 
-    public String getPath() {
-        return Path;
+    public String[] getPaths() {
+        return Paths;
     }
 
     public ParallelType getParallelType() {

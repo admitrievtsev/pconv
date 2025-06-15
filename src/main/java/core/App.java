@@ -36,9 +36,13 @@ public class App {
                     case NEW:
                         convoluter.setImage(profiler.getImage());
                         break;
+                    case STREAM:
+                        Profiler finalProfiler = profiler;
+                        new Thread(() -> convoluter.stream(finalProfiler.getPaths(), finalProfiler.getFilter(), finalProfiler.getThreadsCount())).start();
+                        break;
                     case SAVE:
                         if (convoluter.getImage() != null) {
-                            if (!opencv_imgcodecs.imwrite(profiler.getPath(), convoluter.getImage())) {
+                            if (!opencv_imgcodecs.imwrite(profiler.getPaths()[0], convoluter.getImage())) {
                                 System.out.println("Failed to save file");
                             } else {
                                 System.out.println("File successfully saved");

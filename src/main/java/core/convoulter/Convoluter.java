@@ -103,6 +103,10 @@ public class Convoluter {
         result.put((byte) (res_byte));
     }
 
+    public void stream(String[] paths, FilterType filter, int threadCount) {
+        
+    }
+
     private void MakeSimpleConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h) throws Exception {
 
         Mat result = Image.clone();

@@ -1,6 +1,6 @@
 package core.console;
 
 public enum ProfilerType {
-    PROCESS, NEW, EMPTY, SAVE
+    PROCESS, NEW, EMPTY, SAVE, STREAM
 }
 
