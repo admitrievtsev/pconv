@@ -258,10 +258,9 @@ public class Convoluter {
             if (!opencv_imgcodecs.imwrite(path, result)) {
                 System.out.println("Failed to save streamed\n" + path + " file");
             } else {
-                System.out.print("\nStreamed file" + path + " successfully processed and saved\n> ");
+                System.out.print("\nStreamed in the background file " + path + " successfully processed and saved\n> ");
             }
         }
         currentlyRunning.addAndGet(-1);
-
     }
 }
