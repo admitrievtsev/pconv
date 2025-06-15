@@ -2,25 +2,23 @@ package core.convoulter;
 
 import core.console.FilterType;
 import core.console.ParallelType;
-import core.console.Profiler;
-import core.console.ProfilerType;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.opencv.global.opencv_imgcodecs;
 import org.bytedeco.opencv.opencv_core.Mat;
-import org.testng.internal.collections.Pair;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.Condition;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.*;
 
 public class Convoluter {
     private Mat Image;
+    private final int effectiveThreads = 4;
     private final BlockingQueue<StreamRecord> streamingQueue = new LinkedBlockingQueue<>();
+    private final AtomicInteger currentlyRunning = new AtomicInteger();
+    private final AtomicInteger currentlyWaitingResponse = new AtomicInteger();
     Filters Filters = new Filters();
 
     public void setImage(Mat Image) {
@@ -54,7 +52,7 @@ public class Convoluter {
         };
     }
 
-    public void convolution(FilterType filterType, ParallelType parallelType, int threadsCount) throws Exception {
+    public void convolution(FilterType filterType, ParallelType parallelType, int threadsCount) {
         Filter Filter = decideFilter(filterType);
         if (Filter == null) return;
         int filterHeight = Filter.getHeight();
@@ -107,13 +105,23 @@ public class Convoluter {
 
     public void stream(String[] paths, FilterType filterType) {
         paths = (new HashSet<>(Arrays.asList(paths))).toArray(new String[0]); //delete duplicated images from the list
+        long timeOut = 1000;
 
         for (String path : paths) {
             Mat readedImage = opencv_imgcodecs.imread(path, 0);
 
             if (!readedImage.empty()) {
                 try {
-                    streamingQueue.put(new StreamRecord(readedImage, path, decideFilter(filterType)));
+                    if (currentlyRunning.get() < effectiveThreads) {
+                        streamingQueue.put(new StreamRecord(readedImage, path, decideFilter(filterType)));
+                    } else {
+                        System.out.println("Await for clear");
+                        int awaitK = toIntExact((int) sqrt(currentlyRunning.get()));
+                        Thread.sleep(timeOut * awaitK); //waiting before new reading and passing value to convoulter if execution queue filled enough
+                        System.out.println("Put Value after Sleep");
+                        streamingQueue.put(new StreamRecord(readedImage, path, decideFilter(filterType)));
+
+                    }
                 } catch (InterruptedException ex) {
                     System.out.println("Thread interrupted while reading value");
                 }
@@ -121,7 +129,7 @@ public class Convoluter {
                 System.out.println("Could not receive transmission from file " + path);
             }
         }
-        System.out.print("\nStream processing finished\n> ");
+        System.out.print("\nStream tasks passing finished\n> ");
     }
 
     private void asyncStreamConvolution() {
@@ -235,11 +243,13 @@ public class Convoluter {
     }
 
     private void MakeStreamedConvolution(String path, Mat image, int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int balancingParameter) {
-        int threadsCount = (int) Math.max(1, Math.pow(2, (4 - balancingParameter))); //balancing factor for amount of threads given on single image processing
+        int threadsCount = (int) Math.max(1, Math.pow(2, (sqrt(effectiveThreads) - balancingParameter))); //balancing factor for amount of threads given on single image processing
         ExecutorService threadPool = Executors.newFixedThreadPool(threadsCount);
         Mat result = image.clone();
+        currentlyRunning.addAndGet(1);
+
         // /load src/main/resources/test_1.bmp
-        // /stream blur src/main/resources/test_1.bmp src/main/resources/test_2.bmp src/main/resources/test_3.bmp src/main/resources/test_4.bmp src/main/resources/test_5.bmp
+        // /stream blur src/main/resources/test_1.bmp src/main/resources/test_2.bmp src/main/resources/test_3.bmp src/main/resources/test_4.bmp src/main/resources/test_5.bmp src/main/resources/test_6.bmp src/main/resources/test_7.bmp src/main/resources/test_8.bmp src/main/resources/test_9.bmp src/main/resources/test_10.bmp
 
         for (int y = 0; y < h; y++) {
             int finalY = y;
@@ -259,5 +269,8 @@ public class Convoluter {
                 System.out.println("\nStreamed file" + path + " successfully processed and saved\n");
             }
         }
+        System.out.println("Currently running " + currentlyRunning.get());
+        currentlyRunning.addAndGet(-1);
+
     }
 }
