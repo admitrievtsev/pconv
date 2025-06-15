@@ -15,7 +15,6 @@ import static java.lang.Math.*;
 
 public class Convoluter {
     private Mat Image;
-    private long timeStart;
     private final int effectiveThreads = 4; //amount of effective threads on your machine/threads you want to run stream with
     private final BlockingQueue<StreamRecord> streamingQueue = new LinkedBlockingQueue<>(); //queue of loaded and ready-to-go images
     private final AtomicInteger currentlyRunning = new AtomicInteger(); //amount of currently running threads
@@ -102,7 +101,6 @@ public class Convoluter {
     public void stream(String[] paths, FilterType filterType) {
         paths = (new HashSet<>(Arrays.asList(paths))).toArray(new String[0]); //delete duplicated images from the list
         long timeOut = 1000; //1s constant
-        timeStart = System.currentTimeMillis();
         for (String path : paths) {
             Mat readedImage = opencv_imgcodecs.imread(path, 0);
 
@@ -263,8 +261,5 @@ public class Convoluter {
             }
         }
         currentlyRunning.addAndGet(-1);
-        if (currentlyRunning.get() == 0) {
-            System.out.println("Processed time: " + (System.currentTimeMillis() - timeStart));
-        }
     }
 }
