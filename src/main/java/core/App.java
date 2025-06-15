@@ -19,6 +19,9 @@ public class App {
         Profiler profiler;
 
         Scanner scanner = new Scanner(console.getInputStream());
+        CompletableFuture.runAsync(() -> {
+            convoluter.init();
+        });
 
         while (true) {
             try {

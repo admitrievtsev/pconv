@@ -10,6 +10,7 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import org.testng.internal.collections.Pair;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.*;
@@ -32,6 +33,10 @@ public class Convoluter {
 
     public Mat getImage() {
         return this.Image;
+    }
+
+    public void init() {
+        asyncStreamConvolution();
     }
 
     private Filter decideFilter(FilterType filterType) {
@@ -78,13 +83,13 @@ public class Convoluter {
         }
     }
 
-    private void convoult(BytePointer result, int y, int x, int w, int h, double factor, double bias, int filterHeight, int filterWidth, int[][] filter) {
+    private void convoult(Mat original, BytePointer result, int y, int x, int w, int h, double factor, double bias, int filterHeight, int filterWidth, int[][] filter) {
         double color = 0.0;
         for (int filterY = 0; filterY < filterHeight; filterY++)
             for (int filterX = 0; filterX < filterWidth; filterX++) {
                 int imageX = (x - filterWidth / 2 + filterX + w) % w;
                 int imageY = (y - filterHeight / 2 + filterY + h) % h;
-                int t = (Image.ptr(imageY, imageX).get());
+                int t = (original.ptr(imageY, imageX).get());
 
                 if (t < 0) {
                     t = t + 256;
@@ -101,10 +106,11 @@ public class Convoluter {
     }
 
     public void stream(String[] paths, FilterType filterType) {
-        System.out.println(Arrays.toString(paths));
+        paths = (new HashSet<>(Arrays.asList(paths))).toArray(new String[0]); //delete duplicated images from the list
+
         for (String path : paths) {
-            Mat readedImage = opencv_imgcodecs.imread(path);
-            System.out.println("HERE");
+            Mat readedImage = opencv_imgcodecs.imread(path, 0);
+
             if (!readedImage.empty()) {
                 try {
                     streamingQueue.put(new StreamRecord(readedImage, path, decideFilter(filterType)));
@@ -115,7 +121,7 @@ public class Convoluter {
                 System.out.println("Could not receive transmission from file " + path);
             }
         }
-        System.out.println("\nStream processing finished\n> ");
+        System.out.print("\nStream processing finished\n> ");
     }
 
     private void asyncStreamConvolution() {
@@ -141,7 +147,7 @@ public class Convoluter {
 
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
-                convoult(result.ptr(y, x), y, x, w, h, factor, bias, filterHeight, filterWidth, filter);
+                convoult(Image, result.ptr(y, x), y, x, w, h, factor, bias, filterHeight, filterWidth, filter);
             }
         }
         setImage(result);
@@ -159,7 +165,7 @@ public class Convoluter {
             for (int y = 0; y < h; y++) {
                 int finalY = y;
                 int finalX = x;
-                threadPool.execute(() -> convoult(result.ptr(finalY, finalX), finalY, finalX, w, h, factor, bias, filterHeight, filterWidth, filter));
+                threadPool.execute(() -> convoult(Image, result.ptr(finalY, finalX), finalY, finalX, w, h, factor, bias, filterHeight, filterWidth, filter));
             }
         }
         threadPool.close();
@@ -176,8 +182,8 @@ public class Convoluter {
         for (int y = 0; y < h; y++) {
             int finalY = y;
             threadPool.execute(() -> {
-                for (int x = 0; x < h; x++) {
-                    convoult(result.ptr(finalY, x), finalY, x, w, h, factor, bias, filterHeight, filterWidth, filter);
+                for (int x = 0; x < w; x++) {
+                    convoult(Image, result.ptr(finalY, x), finalY, x, w, h, factor, bias, filterHeight, filterWidth, filter);
                 }
             });
         }
@@ -196,7 +202,7 @@ public class Convoluter {
             int finalX = x;
             threadPool.execute(() -> {
                 for (int y = 0; y < h; y++) {
-                    convoult(result.ptr(y, finalX), y, finalX, w, h, factor, bias, filterHeight, filterWidth, filter);
+                    convoult(Image, result.ptr(y, finalX), y, finalX, w, h, factor, bias, filterHeight, filterWidth, filter);
                 }
             });
         }
@@ -218,7 +224,7 @@ public class Convoluter {
                 threadPool.execute(() -> {
                     for (int y_t = finalY * ThreadsCount; y_t < min(h, (finalY + 1) * ThreadsCount); y_t++) {
                         for (int x_t = finalX * ThreadsCount; x_t < min(w, (finalX + 1) * ThreadsCount); x_t++) {
-                            convoult(result.ptr(y_t, x_t), y_t, x_t, w, h, factor, bias, filterHeight, filterWidth, filter);
+                            convoult(Image, result.ptr(y_t, x_t), y_t, x_t, w, h, factor, bias, filterHeight, filterWidth, filter);
                         }
                     }
                 });
@@ -231,23 +237,23 @@ public class Convoluter {
     private void MakeStreamedConvolution(String path, Mat image, int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int balancingParameter) {
         int threadsCount = (int) Math.max(1, Math.pow(2, (4 - balancingParameter))); //balancing factor for amount of threads given on single image processing
         ExecutorService threadPool = Executors.newFixedThreadPool(threadsCount);
-
-        // /load src/main/resources/test.bmp
-        // /stream blur src/main/resources/test.bmp src/main/resources/test.bmp src/main/resources/test.bmp src/main/resources/test.bmp
+        Mat result = image.clone();
+        // /load src/main/resources/test_1.bmp
+        // /stream blur src/main/resources/test_1.bmp src/main/resources/test_2.bmp src/main/resources/test_3.bmp src/main/resources/test_4.bmp src/main/resources/test_5.bmp
 
         for (int y = 0; y < h; y++) {
             int finalY = y;
             threadPool.execute(() -> {
-                for (int x = 0; x < h; x++) {
-                    convoult(image.ptr(finalY, x), finalY, x, w, h, factor, bias, filterHeight, filterWidth, filter);
+                for (int x = 0; x < w; x++) {
+                    convoult(image, result.ptr(finalY, x), finalY, x, w, h, factor, bias, filterHeight, filterWidth, filter);
                 }
             });
         }
         threadPool.close();
 
         //image saving, has highest priority and has no balancing factor
-        if (image != null) {
-            if (!opencv_imgcodecs.imwrite(path, image)) {
+        if (result != null) {
+            if (!opencv_imgcodecs.imwrite(path, result)) {
                 System.out.println("Failed to save streamed\n" + path + " file");
             } else {
                 System.out.println("\nStreamed file" + path + " successfully processed and saved\n");
