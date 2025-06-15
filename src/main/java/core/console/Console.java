@@ -65,7 +65,7 @@ public class Console {
                                     "/exit - to exit program\n" +
                                     "/load [path] - to load image. Path cannot be null.\n" +
                                     "/save [path] - to save image. Path cannot be null.\n" +
-                                    "/help - to call list of possible commands" +
+                                    "/help - to call list of possible commands\n" +
                                     "/stream [filter type] [path1] [path2] ... - on-line processing of array of images\n" +
                                     "   [filter type] - type of filter applying to image. Possible variants:\n" +
                                     "   Note: you current images will be replaced with new images by time they will be processed\n" +
