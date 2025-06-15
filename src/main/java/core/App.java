@@ -7,6 +7,7 @@ import core.convoulter.Convoluter;
 import org.bytedeco.opencv.global.opencv_imgcodecs;
 
 import java.util.Scanner;
+import java.util.concurrent.CompletableFuture;
 
 public class App {
 
@@ -38,7 +39,9 @@ public class App {
                         break;
                     case STREAM:
                         Profiler finalProfiler = profiler;
-                        new Thread(() -> convoluter.stream(finalProfiler.getPaths(), finalProfiler.getFilter(), finalProfiler.getThreadsCount())).start();
+                        CompletableFuture.runAsync(() -> {
+                            convoluter.stream(finalProfiler.getPaths(), finalProfiler.getFilter(), finalProfiler.getThreadsCount());
+                        });
                         break;
                     case SAVE:
                         if (convoluter.getImage() != null) {

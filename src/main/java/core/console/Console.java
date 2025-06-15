@@ -21,12 +21,12 @@ public class Console {
     public Console() {
         this.inputStream = System.in;
         this.printStream = System.out;
-    }
+    } //simple init, stdin/stdout
 
     public Console(Mat Image, InputStream inputStream, PrintStream printStream) {
         this.inputStream = inputStream;
         this.printStream = printStream;
-    }
+    } //init with specified input streams
 
 
     public InputStream getInputStream() {
@@ -35,15 +35,15 @@ public class Console {
 
     public void setInputStream(InputStream inputStream) {
         this.inputStream = inputStream;
-    }
+    }//set if you want to change commands input stream, from file for example
 
     public PrintStream getPrintStream() {
         return printStream;
-    }
+    } //get if you want to change commands output stream, from file for example
 
     public void setPrintStream(PrintStream printStream) {
         this.printStream = printStream;
-    }
+    } //set if you want to change commands input stream, from file for example
 
     public static void addCommand(String message) {
         commands.addLast(message);
@@ -68,7 +68,7 @@ public class Console {
                                     "/help - to call list of possible commands" +
                                     "/stream [filter type] [path1] [path2] ... - on-line processing of array of images" +
                                     "   [filter type] - type of filter applying to image. Possible variants:\n" +
-                                    "/convolution [filter type] [parallel type] [amount of threads] - to make image convolution." +
+                                    "/convolution [filter type] [parallel type] [amount of threads] - to make stored image convolution." +
                                     "   [filter type] - type of filter applying to image. Possible variants:\n" +
                                     "       - blur\n" +
                                     "       - gaussian_blur\n" +
@@ -97,13 +97,13 @@ public class Console {
                     switch (command[0]) {
                         case "/load":
                             this.printStream.println("Loading file...");
-                            Mat ReadedImage = opencv_imgcodecs.imread(command[1], 0);
-                            if (ReadedImage.empty()) {
+                            Mat readedImage = opencv_imgcodecs.imread(command[1], 0);
+                            if (readedImage.empty()) {
                                 printStream.println("Couldn't find file with path " + command[1]);
                             } else {
                                 printStream.println("File " + command[1] + "loaded successfully");
-                                printStream.println(ReadedImage); //dedug to-remove
-                                return new Profiler(ProfilerType.NEW, ReadedImage);
+                                printStream.println(readedImage); //debug to-remove
+                                return new Profiler(ProfilerType.NEW, readedImage);
                             }
                             break;
                         case "/save":
@@ -115,7 +115,7 @@ public class Console {
                     switch ((command[0])) {
                         case "/convolution": {
                             int threadsCount;
-                            ParallelType ParallelType = null;
+                            ParallelType parallelType;
                             int arg;
                             try {
                                 arg = Integer.parseInt(command[2]);
@@ -135,18 +135,18 @@ public class Console {
                             }
                             //У меня тут сломался свитч-кейс в джаве, поэтому так
                             if (arg == 2) {
-                                ParallelType = PIXEL;
+                                parallelType = PIXEL;
                             } else if (arg == 3) {
-                                ParallelType = ROWS;
+                                parallelType = ROWS;
                             } else if (arg == 4) {
-                                ParallelType = COLS;
+                                parallelType = COLS;
                             } else if (arg == 5) {
-                                ParallelType = FRGM;
+                                parallelType = FRGM;
                             } else {
                                 incorrectCommand(Arrays.toString(command));
                                 break;
                             }
-                            return new Profiler(ProfilerType.PROCESS, decideFilter(command[1]), ParallelType, threadsCount);
+                            return new Profiler(ProfilerType.PROCESS, decideFilter(command[1]), parallelType, threadsCount);
                         }
                         case "/stream":
                             continue;
@@ -171,30 +171,15 @@ public class Console {
     }
 
     private FilterType decideFilter(String fType) {
-        switch (fType) {
-            case "blur": {
-                return FilterType.BLUR;
-            }
-            case "gaussian_blur": {
-                return FilterType.GBLUR;
-            }
-            case "motion_blur": {
-                return FilterType.MBLUR;
-            }
-            case "find_edges": {
-                return FilterType.FEDGES;
-            }
-            case "sharpen": {
-                return FilterType.SHARP;
-            }
-            case "emboss": {
-                return FilterType.EMBOSS;
-            }
-            case "id": {
-                return FilterType.ID;
-            }
-            default:
-                return null;
-        }
+        return switch (fType) {
+            case "blur" -> FilterType.BLUR;
+            case "gaussian_blur" -> FilterType.GBLUR;
+            case "motion_blur" -> FilterType.MBLUR;
+            case "find_edges" -> FilterType.FEDGES;
+            case "sharpen" -> FilterType.SHARP;
+            case "emboss" -> FilterType.EMBOSS;
+            case "id" -> FilterType.ID;
+            default -> null;
+        };
     }
 }

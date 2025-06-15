@@ -2,15 +2,23 @@ package core.convoulter;
 
 import core.console.FilterType;
 import core.console.ParallelType;
+import core.console.Profiler;
+import core.console.ProfilerType;
 import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.opencv.global.opencv_imgcodecs;
 import org.bytedeco.opencv.opencv_core.Mat;
+import org.testng.internal.collections.Pair;
 
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.Condition;
 
 import static java.lang.Math.*;
 
 public class Convoluter {
     private Mat Image;
+    private BlockingQueue<StreamRecord> streamingQueue;
     Filters Filters = new Filters();
 
     public void setImage(Mat Image) {
@@ -21,40 +29,24 @@ public class Convoluter {
         return this.Image;
     }
 
-    public void convolution(FilterType FilterType, ParallelType parallelType, int threadsCount) throws Exception {
-        Filter Filter;
-        switch (FilterType) {
-            case BLUR -> {
-                Filter = Filters.BlurFilter;
-            }
-            case GBLUR -> {
-                Filter = Filters.GBlurFilter;
-            }
-            case MBLUR -> {
-                Filter = Filters.MBlurFilter;
-            }
-            case FEDGES -> {
-                Filter = Filters.EdgesFilter;
-            }
-            case EMBOSS -> {
-                Filter = Filters.EmbossFilter;
-            }
-            case SHARP -> {
-                Filter = Filters.SharpenFilter;
-            }
-            case ID -> {
-                Filter = Filters.Id;
-            }
-            case SL -> {
-                Filter = Filters.ShiftLeft;
-            }
-            case SR -> {
-                Filter = Filters.ShiftRight;
-            }
-            case null -> {
-                return;
-            }
-        }
+    private Filter decideFilter(FilterType filterType) {
+        return switch (filterType) {
+            case BLUR -> Filters.BlurFilter;
+            case GBLUR -> Filters.GBlurFilter;
+            case MBLUR -> Filters.MBlurFilter;
+            case FEDGES -> Filters.EdgesFilter;
+            case EMBOSS -> Filters.EmbossFilter;
+            case SHARP -> Filters.SharpenFilter;
+            case ID -> Filters.Id;
+            case SL -> Filters.ShiftLeft;
+            case SR -> Filters.ShiftRight;
+            case null -> null;
+        };
+    }
+
+    public void convolution(FilterType filterType, ParallelType parallelType, int threadsCount) throws Exception {
+        Filter Filter = decideFilter(filterType);
+        if (Filter == null) return;
         int filterHeight = Filter.getHeight();
         int filterWidth = Filter.getWidth();
         int[][] filter = Filter.getFilter();
@@ -103,12 +95,33 @@ public class Convoluter {
         result.put((byte) (res_byte));
     }
 
-    public void stream(String[] paths, FilterType filter, int threadCount) {
-        
+    public void stream(String[] paths, FilterType filterType, int threadCount) {
+        for (String path : paths) {
+            Mat readedImage = opencv_imgcodecs.imread(path);
+            if (!readedImage.empty()) {
+                try {
+                    streamingQueue.put(new StreamRecord(readedImage, path, decideFilter(filterType)));
+                } catch (InterruptedException ex) {
+                    System.out.println("Thread interrupted while reading value");
+                }
+            }
+        }
+        System.out.println("\nStream processing finished\n> ");
+    }
+
+    private void asyncStreamConvolution(String path, FilterType filterType) {
+        while (true) {
+            try {
+                StreamRecord imageMeta = streamingQueue.take();
+
+
+            } catch (InterruptedException ex) {
+                System.out.println("Thread interrupted while waiting value");
+            }
+        }
     }
 
     private void MakeSimpleConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h) throws Exception {
-
         Mat result = Image.clone();
 
         // src/main/resources/test.bmp
@@ -202,4 +215,24 @@ public class Convoluter {
         threadPool.close();
         setImage(result);
     }
+
+    private void MakeStreamedConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
+        ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
+        Mat result = Image.clone();
+
+        // /load src/main/resources/test.bmp
+        // /convolution blur 3 16
+
+        for (int y = 0; y < h; y++) {
+            int finalY = y;
+            threadPool.execute(() -> {
+                for (int x = 0; x < h; x++) {
+                    convoult(result.ptr(finalY, x), finalY, x, w, h, factor, bias, filterHeight, filterWidth, filter);
+                }
+            });
+        }
+        threadPool.close();
+        setImage(result);
+    }
+
 }
