@@ -28,6 +28,15 @@ public class Profiler {
         this.ThreadsCount = ThreadsCount;
     }
 
+    public Profiler(ProfilerType Type, FilterType Filter, ParallelType PType, String[] paths) {
+        this.Type = Type;
+        this.Image = null;
+        this.Paths = paths;
+        this.Filter = Filter;
+        this.ParallelType = PType;
+        this.ThreadsCount = 1;
+    }
+
     public Profiler(ProfilerType Type, Mat Image) {
         this.Type = Type;
         this.Image = Image;

@@ -9,6 +9,7 @@ import org.bytedeco.opencv.global.opencv_imgcodecs;
 import org.bytedeco.opencv.opencv_core.Mat;
 import org.testng.internal.collections.Pair;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.*;
@@ -18,11 +19,15 @@ import static java.lang.Math.*;
 
 public class Convoluter {
     private Mat Image;
-    private BlockingQueue<StreamRecord> streamingQueue;
+    private final BlockingQueue<StreamRecord> streamingQueue = new LinkedBlockingQueue<>();
     Filters Filters = new Filters();
 
     public void setImage(Mat Image) {
         this.Image = Image;
+    }
+
+    public int getQueuedTaskNumber() {
+        return streamingQueue.size();
     }
 
     public Mat getImage() {
@@ -95,33 +100,40 @@ public class Convoluter {
         result.put((byte) (res_byte));
     }
 
-    public void stream(String[] paths, FilterType filterType, int threadCount) {
+    public void stream(String[] paths, FilterType filterType) {
+        System.out.println(Arrays.toString(paths));
         for (String path : paths) {
             Mat readedImage = opencv_imgcodecs.imread(path);
+            System.out.println("HERE");
             if (!readedImage.empty()) {
                 try {
                     streamingQueue.put(new StreamRecord(readedImage, path, decideFilter(filterType)));
                 } catch (InterruptedException ex) {
                     System.out.println("Thread interrupted while reading value");
                 }
+            } else {
+                System.out.println("Could not receive transmission from file " + path);
             }
         }
         System.out.println("\nStream processing finished\n> ");
     }
 
-    private void asyncStreamConvolution(String path, FilterType filterType) {
+    private void asyncStreamConvolution() {
         while (true) {
             try {
                 StreamRecord imageMeta = streamingQueue.take();
-
-
+                Mat image = imageMeta.getImage();
+                String path = imageMeta.getPath();
+                Filter filter = imageMeta.getFilter();
+                CompletableFuture.runAsync(() ->
+                        MakeStreamedConvolution(path, image, filter.getHeight(), filter.getWidth(), filter.getFilter(), filter.getBias(), filter.getFactor(), image.arrayWidth(), image.arrayHeight(), streamingQueue.size()));
             } catch (InterruptedException ex) {
                 System.out.println("Thread interrupted while waiting value");
             }
         }
     }
 
-    private void MakeSimpleConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h) throws Exception {
+    private void MakeSimpleConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h) {
         Mat result = Image.clone();
 
         // src/main/resources/test.bmp
@@ -136,7 +148,7 @@ public class Convoluter {
     }
 
 
-    private void MakePixelConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
+    private void MakePixelConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) {
         ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
         Mat result = Image.clone();
 
@@ -154,7 +166,7 @@ public class Convoluter {
         setImage(result);
     }
 
-    private void MakeRowsConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
+    private void MakeRowsConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) {
         ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
         Mat result = Image.clone();
 
@@ -173,7 +185,7 @@ public class Convoluter {
         setImage(result);
     }
 
-    private void MakeColsConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
+    private void MakeColsConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) {
         ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
         Mat result = Image.clone();
 
@@ -192,7 +204,7 @@ public class Convoluter {
         setImage(result);
     }
 
-    private void MakeFragmentConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
+    private void MakeFragmentConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) {
         ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
         Mat result = Image.clone();
 
@@ -216,23 +228,30 @@ public class Convoluter {
         setImage(result);
     }
 
-    private void MakeStreamedConvolution(int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int ThreadsCount) throws ExecutionException, InterruptedException {
-        ExecutorService threadPool = Executors.newFixedThreadPool(ThreadsCount);
-        Mat result = Image.clone();
+    private void MakeStreamedConvolution(String path, Mat image, int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int balancingParameter) {
+        int threadsCount = (int) Math.max(1, Math.pow(2, (4 - balancingParameter))); //balancing factor for amount of threads given on single image processing
+        ExecutorService threadPool = Executors.newFixedThreadPool(threadsCount);
 
         // /load src/main/resources/test.bmp
-        // /convolution blur 3 16
+        // /stream blur src/main/resources/test.bmp src/main/resources/test.bmp src/main/resources/test.bmp src/main/resources/test.bmp
 
         for (int y = 0; y < h; y++) {
             int finalY = y;
             threadPool.execute(() -> {
                 for (int x = 0; x < h; x++) {
-                    convoult(result.ptr(finalY, x), finalY, x, w, h, factor, bias, filterHeight, filterWidth, filter);
+                    convoult(image.ptr(finalY, x), finalY, x, w, h, factor, bias, filterHeight, filterWidth, filter);
                 }
             });
         }
         threadPool.close();
-        setImage(result);
-    }
 
+        //image saving, has highest priority and has no balancing factor
+        if (image != null) {
+            if (!opencv_imgcodecs.imwrite(path, image)) {
+                System.out.println("Failed to save streamed\n" + path + " file");
+            } else {
+                System.out.println("\nStreamed file" + path + " successfully processed and saved\n");
+            }
+        }
+    }
 }

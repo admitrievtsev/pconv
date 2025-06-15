@@ -159,7 +159,7 @@ public class Console {
                     if (command.length > 2 && Objects.equals(command[0], "/stream")) {
                         FilterType filter = decideFilter(command[1]);
                         if (filter != null) {
-                            return new Profiler(ProfilerType.STREAM, filter, ROWS, ((int) (16) / (command.length - 2)) + 1);
+                            return new Profiler(ProfilerType.STREAM, filter, ROWS, Arrays.copyOfRange(command, 2, command.length));
                         }
                     }
                     incorrectCommand(Arrays.toString(command));

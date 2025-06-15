@@ -21,7 +21,7 @@ public class Benchmark {
             FileWriter writer = new FileWriter("src/main/result.csv");
 
 
-            Mat Reference = opencv_imgcodecs.imread("src/main/resources/test_1.bmp", 0);
+            Mat Reference = opencv_imgcodecs.imread("src/main/resources/putin_streamed.bmp", 0);
             ArrayList<Long> results = new ArrayList<Long>();
             Convoluter worker = new Convoluter();
             int repeat_times = 50; //define repeat number here

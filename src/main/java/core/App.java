@@ -40,8 +40,9 @@ public class App {
                     case STREAM:
                         Profiler finalProfiler = profiler;
                         CompletableFuture.runAsync(() -> {
-                            convoluter.stream(finalProfiler.getPaths(), finalProfiler.getFilter(), finalProfiler.getThreadsCount());
+                            convoluter.stream(finalProfiler.getPaths(), finalProfiler.getFilter());
                         });
+                        System.out.println("Queued tasks: " + convoluter.getQueuedTaskNumber());
                         break;
                     case SAVE:
                         if (convoluter.getImage() != null) {
