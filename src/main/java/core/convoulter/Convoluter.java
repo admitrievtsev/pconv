@@ -15,18 +15,13 @@ import static java.lang.Math.*;
 
 public class Convoluter {
     private Mat Image;
-    private final int effectiveThreads = 4;
-    private final BlockingQueue<StreamRecord> streamingQueue = new LinkedBlockingQueue<>();
-    private final AtomicInteger currentlyRunning = new AtomicInteger();
-    private final AtomicInteger currentlyWaitingResponse = new AtomicInteger();
+    private final int effectiveThreads = 4; //amount of effective threads on your machine/threads you want to run stream with
+    private final BlockingQueue<StreamRecord> streamingQueue = new LinkedBlockingQueue<>(); //queue of loaded and ready-to-go images
+    private final AtomicInteger currentlyRunning = new AtomicInteger(); //amount of currently running threads
     Filters Filters = new Filters();
 
     public void setImage(Mat Image) {
         this.Image = Image;
-    }
-
-    public int getQueuedTaskNumber() {
-        return streamingQueue.size();
     }
 
     public Mat getImage() {
@@ -105,7 +100,7 @@ public class Convoluter {
 
     public void stream(String[] paths, FilterType filterType) {
         paths = (new HashSet<>(Arrays.asList(paths))).toArray(new String[0]); //delete duplicated images from the list
-        long timeOut = 1000;
+        long timeOut = 1000; //1s constant
 
         for (String path : paths) {
             Mat readedImage = opencv_imgcodecs.imread(path, 0);
@@ -115,10 +110,8 @@ public class Convoluter {
                     if (currentlyRunning.get() < effectiveThreads) {
                         streamingQueue.put(new StreamRecord(readedImage, path, decideFilter(filterType)));
                     } else {
-                        System.out.println("Await for clear");
                         int awaitK = toIntExact((int) sqrt(currentlyRunning.get()));
                         Thread.sleep(timeOut * awaitK); //waiting before new reading and passing value to convoulter if execution queue filled enough
-                        System.out.println("Put Value after Sleep");
                         streamingQueue.put(new StreamRecord(readedImage, path, decideFilter(filterType)));
 
                     }
@@ -129,7 +122,6 @@ public class Convoluter {
                 System.out.println("Could not receive transmission from file " + path);
             }
         }
-        System.out.print("\nStream tasks passing finished\n> ");
     }
 
     private void asyncStreamConvolution() {
@@ -140,7 +132,7 @@ public class Convoluter {
                 String path = imageMeta.getPath();
                 Filter filter = imageMeta.getFilter();
                 CompletableFuture.runAsync(() ->
-                        MakeStreamedConvolution(path, image, filter.getHeight(), filter.getWidth(), filter.getFilter(), filter.getBias(), filter.getFactor(), image.arrayWidth(), image.arrayHeight(), streamingQueue.size()));
+                        MakeStreamedConvolution(path, image, filter.getHeight(), filter.getWidth(), filter.getFilter(), filter.getBias(), filter.getFactor(), image.arrayWidth(), image.arrayHeight(), currentlyRunning.get()));
             } catch (InterruptedException ex) {
                 System.out.println("Thread interrupted while waiting value");
             }
@@ -243,7 +235,7 @@ public class Convoluter {
     }
 
     private void MakeStreamedConvolution(String path, Mat image, int filterHeight, int filterWidth, int[][] filter, double bias, double factor, int w, int h, int balancingParameter) {
-        int threadsCount = (int) Math.max(1, Math.pow(2, (sqrt(effectiveThreads) - balancingParameter))); //balancing factor for amount of threads given on single image processing
+        int threadsCount = (int) Math.min(Math.max(1, Math.pow(2, (sqrt(effectiveThreads) - balancingParameter))), effectiveThreads); //balancing factor for amount of threads given on single image processing
         ExecutorService threadPool = Executors.newFixedThreadPool(threadsCount);
         Mat result = image.clone();
         currentlyRunning.addAndGet(1);
@@ -266,10 +258,9 @@ public class Convoluter {
             if (!opencv_imgcodecs.imwrite(path, result)) {
                 System.out.println("Failed to save streamed\n" + path + " file");
             } else {
-                System.out.println("\nStreamed file" + path + " successfully processed and saved\n");
+                System.out.print("\nStreamed file" + path + " successfully processed and saved\n> ");
             }
         }
-        System.out.println("Currently running " + currentlyRunning.get());
         currentlyRunning.addAndGet(-1);
 
     }

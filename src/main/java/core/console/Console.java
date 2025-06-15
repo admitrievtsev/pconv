@@ -66,9 +66,10 @@ public class Console {
                                     "/load [path] - to load image. Path cannot be null.\n" +
                                     "/save [path] - to save image. Path cannot be null.\n" +
                                     "/help - to call list of possible commands" +
-                                    "/stream [filter type] [path1] [path2] ... - on-line processing of array of images" +
+                                    "/stream [filter type] [path1] [path2] ... - on-line processing of array of images\n" +
                                     "   [filter type] - type of filter applying to image. Possible variants:\n" +
-                                    "/convolution [filter type] [parallel type] [amount of threads] - to make stored image convolution." +
+                                    "   Note: you current images will be replaced with new images by time they will be processed\n" +
+                                    "/convolution [filter type] [parallel type] [amount of threads] - to make stored image convolution.\n" +
                                     "   [filter type] - type of filter applying to image. Possible variants:\n" +
                                     "       - blur\n" +
                                     "       - gaussian_blur\n" +
@@ -82,7 +83,7 @@ public class Console {
                                     "       - 2(pixel)\n" +
                                     "       - 3(rows)\n" +
                                     "       - 4(cols)\n" +
-                                    "   [amount of thread] - amount of threads. Any integer umber >1. Note: if you want to use 1(sequential) type of parallelism, make this option equal to any integer number" +
+                                    "   [amount of thread] - amount of threads. Any integer umber >1. Note: if you want to use 1(sequential) type of parallelism, make this option equal to any integer number\n" +
                                     "WARNING: YOU CANNOT MAKE CONVOLUTION WITHOUT LOADING IMAGE BEFORE IT");
                             break;
                         case "/exit":
