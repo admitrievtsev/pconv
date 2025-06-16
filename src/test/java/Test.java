@@ -138,7 +138,6 @@ public class Test {
     }
 
     public void PutinStreamSeqEq(String[] paths, FilterType Ftype) throws Exception {
-
         ArrayList<Mat> images_origin = new ArrayList<>();
         Convoluter Conv = new Convoluter();
         CompletableFuture<Void> initFuture = CompletableFuture.runAsync(Conv::init);
@@ -162,7 +161,7 @@ public class Test {
         for (String path : paths) {
             images_processed.add(opencv_imgcodecs.imread(path, 0));
         }
-        Thread.sleep(2000); //await 'till convolution will process, java kickstand here
+        Thread.sleep(2000); //await 'till convolution will process, some kind of java kickstand here, we cannot close an inner future
         CompletableFuture<Void> returnFuture = CompletableFuture.runAsync(() -> {
             for (int i = 0; i < images_origin.size(); i++) {
                 opencv_imgcodecs.imwrite(paths[i], images_origin.get(i)); //return original images
