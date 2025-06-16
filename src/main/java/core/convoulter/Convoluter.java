@@ -133,9 +133,9 @@ public class Convoluter {
             try {
                 StreamRecord imageMeta;
                 if (currentlyProcessed.get() == 0) { //no tasks processed
+                    imageMeta = streamingQueue.take();
                     setLock.lock();
                     {
-                        imageMeta = streamingQueue.take();
                         if (runningTasks.contains(imageMeta.getPath())) {
                             streamingQueue.add(imageMeta); //push image back to queue, still processing
                             setLock.unlock();

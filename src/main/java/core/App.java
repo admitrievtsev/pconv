@@ -10,8 +10,6 @@ import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 
 public class App {
-
-
     public static void main(String[] args) {
         System.out.println("Image convolution\nCopyright 2025, Alexei Dmitrievtsev\nSPDX-License-Identifier WTFPL");
         Console console = new Console();
@@ -60,6 +58,5 @@ public class App {
                 throw new RuntimeException(e);
             }
         }
-
     }
 }

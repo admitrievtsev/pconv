@@ -137,6 +137,7 @@ public class Test {
         }
     }
 
+    // ecbe48ffe3376f9d8547861aa42f2ae6205f3f0f 742efa509021fb387ba748eea96f3da46da50eea
     public void PutinStreamSeqEq(String[] paths, FilterType Ftype) throws Exception {
         ArrayList<Mat> images_origin = new ArrayList<>();
         Convoluter Conv = new Convoluter();
